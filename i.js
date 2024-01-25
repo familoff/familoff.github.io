@@ -254,6 +254,8 @@
 		Lampa.Listener.follow('full', function (e) {
 			if (e.type == 'complite') {
 				var render = e.object.activity.render();
+                console.log(render);
+                console.log(e);
 				if ($('.rate--kp', render).hasClass('hide') && !$('.wait_rating', render).length) {
 					$('.info__rate', render).after('<div style="width:2em;margin-top:1em;margin-right:1em" class="wait_rating"><div class="broadcast__scan"><div></div></div><div>');
 					rating_kp_imdb(e.data.movie);

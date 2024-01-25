@@ -39,19 +39,19 @@
 		var items = [];
 		var html = $('<div></div>');
 		var body = $('<div class="category-full"></div>');
-		this.create = function () {
-			var _this = this;
-			this.activity.loader(true);
-			// var prox = lampa.platform.is('webos') || lampa.platform.is('tizen') || lampa.storage.field('proxy_other') === false ? '' : '';
-			// network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
-			// 	var empty = new lampa.empty();
-			// 	html.append(empty.render());
-			// 	_this.start = empty.start;
-			// 	_this.activity.loader(false);
-			// 	_this.activity.toggle();
-			// });
-			return this.render();
-		};
+			this.create = function () {
+				var _this = this;
+				this.activity.loader(true);
+				// var prox = lampa.platform.is('webos') || lampa.platform.is('tizen') || lampa.storage.field('proxy_other') === false ? '' : '';
+				// network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
+				// 	var empty = new lampa.empty();
+				// 	html.append(empty.render());
+				// 	_this.start = empty.start;
+				// 	_this.activity.loader(false);
+				// 	_this.activity.toggle();
+				// });
+				return this.render();
+			};
 		// this.build = function (data) {
 		// 	scroll.minus();
 		// 	var stations = data.result.stations.sort(function (a, b) {
@@ -134,25 +134,12 @@
 					//otzyv_kp_imdb(e.data.movie['kinopoisk_id'],e.data.movie['imdb_id'],num);
 					kp_reviews(e.data.movie)
 					//num += 1;
-
-					// Lampa.Activity.push({
-					// 	url: '',
-					// 	title: 'Рецензии',
-					// 	component: 'kpRreviews',
-					// 	page: 1
-					// })
-					var modal = $('<div><div class="broadcast__text" style="text-align:left"><div class="otzyv">' + 'GOOD' + '</div></div></div>');
-					var enabled = Lampa.Controller.enabled().name;
-					Lampa.Modal.open({
-						title: "11111111111",
-						html: modal,
-						size: "large",
-						mask: !0,
-						onBack: function () {
-							Lampa.Modal.close(), Lampa.Controller.toggle(enabled)
-						},
-						onSelect: function () { }
-					});
+					Lampa.Activity.push({
+						url: '',
+						title: 'Рецензии',
+						component: 'kpRreviews',
+						page: 1
+					})
 				});
 			}
 

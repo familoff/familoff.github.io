@@ -25,7 +25,7 @@
 	});
 
 	function kp_reviews(card) {
-		var title = card.title;
+		// var title = card.title;
 	}
 
 	function component() {

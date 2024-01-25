@@ -125,6 +125,7 @@
 
 	function startPlugin() {
 		window.kp_reviews_plugin = true;
+		Lampa.Component.add('kpRreviews', component);
 		window.kp_reviews_plugin = new kp_reviews();
 		Lampa.Listener.follow('full', function (e) {
 			if (e.type == 'complite') {

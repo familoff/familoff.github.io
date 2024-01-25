@@ -1,265 +1,153 @@
 (function () {
 	'use strict';
-
-	function rating_kp_imdb(card) {
-		var network = new Lampa.Reguest();
-		var clean_title = cleanTitle(card.title);
-		var search_date = card.release_date || card.first_air_date || card.last_air_date || '0000';
-		var search_year = parseInt((search_date + '').slice(0, 4));
-		var orig = card.original_title || card.original_name;
-		var kp_prox = '';
-		var params = {
-			id: card.id,
-			url: kp_prox + 'https://kinopoiskapiunofficial.tech/',
-			rating_url: kp_prox + 'https://rating.kinopoisk.ru/',
-			headers: {
-				'X-API-KEY': '2a4a0808-81a3-40ae-b0d3-e11335ede616'
-			},
-			cache_time: 60 * 60 * 24 * 1000 //86400000 сек = 1день Время кэша в секундах
-		};
-		getRating();
-
-		function getRating() {
-			var movieRating = _getCache(params.id);
-			if (movieRating) {
-				return _showRating(movieRating[params.id]);
-			} else {
-				searchFilm();
-			}
-		}
-
-		function searchFilm() {
-			var url = params.url;
-			var url_by_title = Lampa.Utils.addUrlComponent(url + 'api/v2.1/films/search-by-keyword', 'keyword=' + encodeURIComponent(clean_title));
-			if (card.imdb_id) url = Lampa.Utils.addUrlComponent(url + 'api/v2.2/films', 'imdbId=' + encodeURIComponent(card.imdb_id));
-			else url = url_by_title;
-			network.clear();
-			network.timeout(15000);
-			network.silent(url, function (json) {
-				if (json.items && json.items.length) chooseFilm(json.items);
-				else if (json.films && json.films.length) chooseFilm(json.films);
-				else if (url !== url_by_title) {
-					network.clear();
-					network.timeout(15000);
-					network.silent(url_by_title, function (json) {
-						if (json.items && json.items.length) chooseFilm(json.items);
-						else if (json.films && json.films.length) chooseFilm(json.films);
-						else chooseFilm([]);
-					}, function (a, c) {
-						showError(network.errorDecode(a, c));
-					}, false, {
-						headers: params.headers
-					});
-				} else chooseFilm([]);
-			}, function (a, c) {
-				showError(network.errorDecode(a, c));
-			}, false, {
-				headers: params.headers
-			});
-		}
-
-		function chooseFilm(items) {
-			if (items && items.length) {
-				var is_sure = false;
-				var is_imdb = false;
-				items.forEach(function (c) {
-					var year = c.start_date || c.year || '0000';
-					c.tmp_year = parseInt((year + '').slice(0, 4));
+	var num;
+	function otzyv_kp_imdb(kpid, imdbid, num) {
+		if (kpid == 'WERWER') {
+			$.get('http://skaztv.online/otzyv.php?kp=' + kpid + '&tmdb=' + imdbid + '&num=' + num, function (data) {
+				var modal = $('<div><div class="broadcast__text" style="text-align:left"><div class="otzyv">' + data + '</div></div></div>');
+				var enabled = Lampa.Controller.enabled().name;
+				Lampa.Modal.open({
+					title: "",
+					html: modal,
+					size: "large",
+					mask: !0,
+					onBack: function () {
+						Lampa.Modal.close(), Lampa.Controller.toggle(enabled)
+					},
+					onSelect: function () { }
 				});
-				if (card.imdb_id) {
-					var tmp = items.filter(function (elem) {
-						return (elem.imdb_id || elem.imdbId) == card.imdb_id;
-					});
-					if (tmp.length) {
-						items = tmp;
-						is_sure = true;
-						is_imdb = true;
-					}
-				}
-				var cards = items;
-				if (cards.length) {
-					if (orig) {
-						var _tmp = cards.filter(function (elem) {
-							return containsTitle(elem.orig_title || elem.nameOriginal, orig) || containsTitle(elem.en_title || elem.nameEn, orig) || containsTitle(elem.title || elem.ru_title || elem.nameRu, orig);
-						});
-						if (_tmp.length) {
-							cards = _tmp;
-							is_sure = true;
-						}
-					}
-					if (card.title) {
-						var _tmp2 = cards.filter(function (elem) {
-							return containsTitle(elem.title || elem.ru_title || elem.nameRu, card.title) || containsTitle(elem.en_title || elem.nameEn, card.title) || containsTitle(elem.orig_title || elem.nameOriginal, card.title);
-						});
-						if (_tmp2.length) {
-							cards = _tmp2;
-							is_sure = true;
-						}
-					}
-					if (cards.length > 1 && search_year) {
-						var _tmp3 = cards.filter(function (c) {
-							return c.tmp_year == search_year;
-						});
-						if (!_tmp3.length) _tmp3 = cards.filter(function (c) {
-							return c.tmp_year && c.tmp_year > search_year - 2 && c.tmp_year < search_year + 2;
-						});
-						if (_tmp3.length) cards = _tmp3;
-					}
-				}
-				if (cards.length == 1 && is_sure && !is_imdb) {
-					if (search_year && cards[0].tmp_year) {
-						is_sure = cards[0].tmp_year > search_year - 2 && cards[0].tmp_year < search_year + 2;
-					}
-					if (is_sure) {
-						is_sure = false;
-						if (orig) {
-							is_sure |= equalTitle(cards[0].orig_title || cards[0].nameOriginal, orig) || equalTitle(cards[0].en_title || cards[0].nameEn, orig) || equalTitle(cards[0].title || cards[0].ru_title || cards[0].nameRu, orig);
-						}
-						if (card.title) {
-							is_sure |= equalTitle(cards[0].title || cards[0].ru_title || cards[0].nameRu, card.title) || equalTitle(cards[0].en_title || cards[0].nameEn, card.title) || equalTitle(cards[0].orig_title || cards[0].nameOriginal, card.title);
-						}
-					}
-				}
-				if (cards.length == 1 && is_sure) {
-					var id = cards[0].kp_id || cards[0].kinopoisk_id || cards[0].kinopoiskId || cards[0].filmId;
-					var base_search = function base_search() {
-						network.clear();
-						network.timeout(15000);
-						network.silent(params.url + 'api/v2.2/films/' + id, function (data) {
-							var movieRating = _setCache(params.id, {
-								kp: data.ratingKinopoisk,
-								imdb: data.ratingImdb,
-								timestamp: new Date().getTime()
-							}); // Кешируем данные
-							return _showRating(movieRating);
-						}, function (a, c) {
-							showError(network.errorDecode(a, c));
-						}, false, {
-							headers: params.headers
-						});
-					};
-					network.clear();
-					network.timeout(5000);
-					network["native"](params.rating_url + id + '.xml', function (str) {
-						if (str.indexOf('<rating>') >= 0) {
-							try {
-								var ratingKinopoisk = 0;
-								var ratingImdb = 0;
-								var xml = $($.parseXML(str));
-								var kp_rating = xml.find('kp_rating');
-								if (kp_rating.length) {
-									ratingKinopoisk = parseFloat(kp_rating.text());
-								}
-								var imdb_rating = xml.find('imdb_rating');
-								if (imdb_rating.length) {
-									ratingImdb = parseFloat(imdb_rating.text());
-								}
-								var movieRating = _setCache(params.id, {
-									kp: ratingKinopoisk,
-									imdb: ratingImdb,
-									timestamp: new Date().getTime()
-								}); // Кешируем данные
-								return _showRating(movieRating);
-							} catch (ex) {
-							}
-						}
-						base_search();
-					}, function (a, c) {
-						base_search();
-					}, false, {
-						dataType: 'text'
-					});
-				} else {
-					var movieRating = _setCache(params.id, {
-						kp: 0,
-						imdb: 0,
-						timestamp: new Date().getTime()
-					}); // Кешируем данные
-					return _showRating(movieRating);
-				}
-			} else {
-				var _movieRating = _setCache(params.id, {
-					kp: 0,
-					imdb: 0,
-					timestamp: new Date().getTime()
-				}); // Кешируем данные
-				return _showRating(_movieRating);
-			}
-		}
+			});
 
-		function cleanTitle(str){
-			return str.replace(/[\s.,:;’'`!?]+/g, ' ').trim();
 		}
+	}
+	$('.otzyvb').on('hover:enter', function () {
+		console.log(123);
+	});
 
-		function normalizeTitle(str){
-			return cleanTitle(str.toLowerCase().replace(/—/g, '-').replace(/ё/g, 'е'));
-		}
+	function kp_reviews(params) {
 
-		function equalTitle(t1, t2){
-			return typeof t1 === 'string' && typeof t2 === 'string' && normalizeTitle(t1) === normalizeTitle(t2);
-		}
+	}
 
-		function containsTitle(str, title){
-			return typeof str === 'string' && typeof title === 'string' && normalizeTitle(str).indexOf(normalizeTitle(title)) !== -1;
-		}
-
-		function showError(error) {
-			Lampa.Noty.show('Рейтинг KP: ' + error);
-		}
-
-		function _getCache(movie) {
-			var timestamp = new Date().getTime();
-			var cache = Lampa.Storage.cache('kp_rating', 500, {}); //500 это лимит ключей
-			if (cache[movie]) {
-				if ((timestamp - cache[movie].timestamp) > params.cache_time) {
-					// Если кеш истёк, чистим его
-					delete cache[movie];
-					Lampa.Storage.set('kp_rating', cache);
-					return false;
-				}
-			} else return false;
-			return cache;
-		}
-
-		function _setCache(movie, data) {
-			var timestamp = new Date().getTime();
-			var cache = Lampa.Storage.cache('kp_rating', 500, {}); //500 это лимит ключей
-			if (!cache[movie]) {
-				cache[movie] = data;
-				Lampa.Storage.set('kp_rating', cache);
-			} else {
-				if ((timestamp - cache[movie].timestamp) > params.cache_time) {
-					data.timestamp = timestamp;
-					cache[movie] = data;
-					Lampa.Storage.set('kp_rating', cache);
-				} else data = cache[movie];
-			}
-			return data;
-		}
-
-		function _showRating(data) {
-			if (data) {
-				var kp_rating = !isNaN(data.kp) && data.kp !== null ? parseFloat(data.kp).toFixed(1) : '0.0';
-				var imdb_rating = !isNaN(data.imdb) && data.imdb !== null ? parseFloat(data.imdb).toFixed(1) : '0.0';
-				var render = Lampa.Activity.active().activity.render();
-				$('.wait_rating', render).remove();
-				$('.rate--imdb', render).removeClass('hide').find('> div').eq(0).text(imdb_rating);
-				$('.rate--kp', render).removeClass('hide').find('> div').eq(0).text(kp_rating);
-			}
-		}
+	function component() {
+		var network = new Lampa.Reguest();
+		var scroll = new Lampa.Scroll({
+			mask: true,
+			over: true,
+			step: 250
+		});
+		var player = window.radio_player;
+		var items = [];
+		var html = $('<div></div>');
+		var body = $('<div class="category-full"></div>');
+		var active;
+		var last;
+		// 	this.create = function () {
+		// 	  var _this = this;
+		// 	  this.activity.loader(true);
+		// 	  var prox = Lampa.Platform.is('webos') || Lampa.Platform.is('tizen') || Lampa.Storage.field('proxy_other') === false ? '' : '';
+		// 	  network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
+		// 		var empty = new Lampa.Empty();
+		// 		html.append(empty.render());
+		// 		_this.start = empty.start;
+		// 		_this.activity.loader(false);
+		// 		_this.activity.toggle();
+		// 	  });
+		// 	  return this.render();
+		// 	};
+		// 	this.build = function (data) {
+		// 	  scroll.minus();
+		// 	  var stations = data.result.stations.sort(function (a, b) {
+		// 		return a.sort - b.sort;
+		// 	  });
+		// 	  this.append(stations);
+		// 	  scroll.append(body);
+		// 	  html.append(scroll.render());
+		// 	  this.activity.loader(false);
+		// 	  this.activity.toggle();
+		// 	};
+		// 	this.append = function (element) {
+		// 	  element.forEach(function (el) {
+		// 		var item$1 = new item(el);
+		// 		item$1.render().on('hover:focus', function () {
+		// 		  last = item$1.render()[0];
+		// 		  active = items.indexOf(item$1);
+		// 		  scroll.update(items[active].render(), true);
+		// 		}).on('hover:enter', function () {
+		// 		  player.play(el);
+		// 		});
+		// 		body.append(item$1.render());
+		// 		items.push(item$1);
+		// 	  });
+		// 	};
+		// 	this.back = function () {
+		// 	  Lampa.Activity.backward();
+		// 	};
+		// 	this.background = function () {
+		// 	  Lampa.Background.immediately('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAZCAYAAABD2GxlAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHASURBVHgBlZaLrsMgDENXxAf3/9XHFdXNZLm2YZHQymPk4CS0277v9+ffrut62nEcn/M8nzb69cxj6le1+75f/RqrZ9fatm3F9wwMR7yhawilNke4Gis/7j9srQbdaVFBnkcQ1WrfgmIIBcTrvgqqsKiTzvpOQbUnAykVW4VVqZXyyDllYFSKx9QaVrO7nGJIB63g+FAq/xhcHWBYdwCsmAtvFZUKE0MlVZWCT4idOlyhTp3K35R/6Nzlq0uBnsKWlEzgSh1VGJxv6rmpXMO7EK+XWUPnDFRWqitQFeY2UyZVryuWlI8ulLgGf19FooAUwC9gCWLcwzWPb7Wa60qdlZxjx6ooUuUqVQsK+y1VoAJyBeJAVsLJeYmg/RIXdG2kPhwYPBUQQyYF0XC8lwP3MTCrYAXB88556peCbUUZV7WccwkUQfCZC4PXdA5hKhSVhythZqjZM0J39w5m8BRadKAcrsIpNZsLIYdOqcZ9hExhZ1MH+QL+ciFzXzmYhZr/M6yUUwp2dp5U4naZDwAF5JRSefdScJZ3SkU0nl8xpaAy+7ml1EqvMXSs1HRrZ9bc3eZUSXmGa/mdyjbmqyX7A9RaYQa9IRJ0AAAAAElFTkSuQmCC');
+		// 	};
+		// 	this.start = function () {
+		// 	  if (Lampa.Activity.active().activity !== this.activity) return;
+		// 	  this.background();
+		// 	  Lampa.Controller.add('content', {
+		// 		toggle: function toggle() {
+		// 		  Lampa.Controller.collectionSet(scroll.render());
+		// 		  Lampa.Controller.collectionFocus(last || false, scroll.render());
+		// 		},
+		// 		left: function left() {
+		// 		  if (Navigator.canmove('left')) Navigator.move('left');else Lampa.Controller.toggle('menu');
+		// 		},
+		// 		right: function right() {
+		// 		  Navigator.move('right');
+		// 		},
+		// 		up: function up() {
+		// 		  if (Navigator.canmove('up')) Navigator.move('up');else Lampa.Controller.toggle('head');
+		// 		},
+		// 		down: function down() {
+		// 		  if (Navigator.canmove('down')) Navigator.move('down');
+		// 		},
+		// 		back: this.back
+		// 	  });
+		// 	  Lampa.Controller.toggle('content');
+		// 	};
+		// 	this.pause = function () {};
+		// 	this.stop = function () {};
+		// 	this.render = function () {
+		// 	  return html;
+		// 	};
+		// 	this.destroy = function () {
+		// 	  network.clear();
+		// 	  Lampa.Arrays.destroy(items);
+		// 	  scroll.destroy();
+		// 	  html.remove();
+		// 	  items = null;
+		// 	  network = null;
+		// 	};
 	}
 
 	function startPlugin() {
-		window.rating_plugin = true;
+		window.kp_reviews_plugin = true;
+		window.kp_reviews_plugin = new kp_reviews();
 		Lampa.Listener.follow('full', function (e) {
 			if (e.type == 'complite') {
-				var render = e.object.activity.render();
-				if ($('.rate--kp', render).hasClass('hide') && !$('.wait_rating', render).length) {
-					$('.info__rate', render).after('<div style="width:2em;margin-top:1em;margin-right:1em" class="wait_rating"><div class="broadcast__scan"><div></div></div><div>');
-					rating_kp_imdb(e.data.movie);
-				}
+				//var num=0;
+				$('.full-start-new__buttons').append('<div class="full-start__button selector button--otzyv"><svg height="34" viewBox="0 0 28 34" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="1.5" y="1.5" width="25" height="31" rx="2.5" stroke="currentColor" stroke-width="3"></rect><rect x="6" y="7" width="9" height="9" rx="1" fill="currentColor"></rect><rect x="6" y="19" width="16" height="3" rx="1.5" fill="currentColor"></rect><rect x="6" y="25" width="11" height="3" rx="1.5" fill="currentColor"></rect><rect x="17" y="7" width="5" height="3" rx="1.5" fill="currentColor"></rect> </svg><span>Отзывы</span></div>');
+				$('.button--reviews').on('hover:enter', function () {
+					//if (num > 9) num = 0;
+					//otzyv_kp_imdb(e.data.movie['kinopoisk_id'],e.data.movie['imdb_id'],num);
+					//num += 1;
+					Lampa.Activity.push({
+						url: '',
+						title: 'Рецензии',
+						component: 'kpRreviews',
+						page: 1
+					})
+				});
 			}
+
 		});
+
 	}
-	if (!window.rating_plugin) startPlugin();
+	if (!window.kp_reviews_plugin) startPlugin();
+
 })();
+

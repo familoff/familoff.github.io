@@ -39,19 +39,20 @@
 		var items = [];
 		var html = $('<div></div>');
 		var body = $('<div class="category-full"></div>');
-			this.create = function () {
-				var _this = this;
-				this.activity.loader(true);
-				// var prox = lampa.platform.is('webos') || lampa.platform.is('tizen') || lampa.storage.field('proxy_other') === false ? '' : '';
-				// network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
-				// 	var empty = new lampa.empty();
-				// 	html.append(empty.render());
-				// 	_this.start = empty.start;
-				// 	_this.activity.loader(false);
-				// 	_this.activity.toggle();
-				// });
-				return this.render();
-			};
+
+		// this.create = function () {
+		// 	var _this = this;
+		// 	this.activity.loader(true);
+		// 	// var prox = lampa.platform.is('webos') || lampa.platform.is('tizen') || lampa.storage.field('proxy_other') === false ? '' : '';
+		// 	// network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
+		// 	// 	var empty = new lampa.empty();
+		// 	// 	html.append(empty.render());
+		// 	// 	_this.start = empty.start;
+		// 	// 	_this.activity.loader(false);
+		// 	// 	_this.activity.toggle();
+		// 	// });
+		// 	return this.render();
+		// };
 		// this.build = function (data) {
 		// 	scroll.minus();
 		// 	var stations = data.result.stations.sort(function (a, b) {

@@ -7,7 +7,7 @@
 				var modal = $('<div><div class="broadcast__text" style="text-align:left"><div class="otzyv">' + data + '</div></div></div>');
 				var enabled = Lampa.Controller.enabled().name;
 				Lampa.Modal.open({
-					title: "",
+					title: "11111111111",
 					html: modal,
 					size: "large",
 					mask: !0,
@@ -24,8 +24,8 @@
 		console.log(123);
 	});
 
-	function kp_reviews(params) {
-
+	function kp_reviews(card) {
+		var title = card.title;
 	}
 
 	function component() {
@@ -39,32 +39,30 @@
 		var items = [];
 		var html = $('<div></div>');
 		var body = $('<div class="category-full"></div>');
-		var active;
-		var last;
-		// 	this.create = function () {
-		// 	  var _this = this;
-		// 	  this.activity.loader(true);
-		// 	  var prox = Lampa.Platform.is('webos') || Lampa.Platform.is('tizen') || Lampa.Storage.field('proxy_other') === false ? '' : '';
-		// 	  network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
-		// 		var empty = new Lampa.Empty();
-		// 		html.append(empty.render());
-		// 		_this.start = empty.start;
-		// 		_this.activity.loader(false);
-		// 		_this.activity.toggle();
-		// 	  });
-		// 	  return this.render();
-		// 	};
-		// 	this.build = function (data) {
-		// 	  scroll.minus();
-		// 	  var stations = data.result.stations.sort(function (a, b) {
+			this.create = function () {
+				var _this = this;
+				this.activity.loader(true);
+				// var prox = lampa.platform.is('webos') || lampa.platform.is('tizen') || lampa.storage.field('proxy_other') === false ? '' : '';
+				// network["native"](prox + 'http://lampa.insomnia247.nl/radio/api/stations/', this.build.bind(this), function () {
+				// 	var empty = new lampa.empty();
+				// 	html.append(empty.render());
+				// 	_this.start = empty.start;
+				// 	_this.activity.loader(false);
+				// 	_this.activity.toggle();
+				// });
+				return this.render();
+			};
+		// this.build = function (data) {
+		// 	scroll.minus();
+		// 	var stations = data.result.stations.sort(function (a, b) {
 		// 		return a.sort - b.sort;
-		// 	  });
-		// 	  this.append(stations);
-		// 	  scroll.append(body);
-		// 	  html.append(scroll.render());
-		// 	  this.activity.loader(false);
-		// 	  this.activity.toggle();
-		// 	};
+		// 	});
+		// 	this.append(stations);
+		// 	scroll.append(body);
+		// 	html.append(scroll.render());
+		// 	this.activity.loader(false);
+		// 	this.activity.toggle();
+		// };
 		// 	this.append = function (element) {
 		// 	  element.forEach(function (el) {
 		// 		var item$1 = new item(el);
@@ -130,18 +128,33 @@
 		Lampa.Listener.follow('full', function (e) {
 			if (e.type == 'complite') {
 				//var num=0;
-				$('.full-start-new__buttons').append('<div class="full-start__button selector button--reviews"><svg height="34" viewBox="0 0 28 34" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="1.5" y="1.5" width="25" height="31" rx="2.5" stroke="currentColor" stroke-width="3"></rect><rect x="6" y="7" width="9" height="9" rx="1" fill="currentColor"></rect><rect x="6" y="19" width="16" height="3" rx="1.5" fill="currentColor"></rect><rect x="6" y="25" width="11" height="3" rx="1.5" fill="currentColor"></rect><rect x="17" y="7" width="5" height="3" rx="1.5" fill="currentColor"></rect> </svg><span>Отзывы</span></div>');
+				$('.full-start-new__buttons').append('<div class="full-start__button selector button--reviews"><svg height="34" viewBox="0 0 28 34" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="1.5" y="1.5" width="25" height="31" rx="2.5" stroke="currentColor" stroke-width="3"></rect><rect x="6" y="7" width="9" height="9" rx="1" fill="currentColor"></rect><rect x="6" y="19" width="16" height="3" rx="1.5" fill="currentColor"></rect><rect x="6" y="25" width="11" height="3" rx="1.5" fill="currentColor"></rect><rect x="17" y="7" width="5" height="3" rx="1.5" fill="currentColor"></rect> </svg><span>Рецензии</span></div>');
 				$('.button--reviews').on('hover:enter', function () {
-					console.log("GOOOD!!!!!!!!!!!!!!!! ");
 					//if (num > 9) num = 0;
 					//otzyv_kp_imdb(e.data.movie['kinopoisk_id'],e.data.movie['imdb_id'],num);
+					kp_reviews(e.data.movie)
 					//num += 1;
-					Lampa.Activity.push({
-						url: '',
-						title: 'Рецензии',
-						component: 'kpRreviews',
-						page: 1
-					})
+
+					// Lampa.Activity.push({
+					// 	url: '',
+					// 	title: 'Рецензии',
+					// 	component: 'kpRreviews',
+					// 	page: 1
+					// })
+					$.get('http://skaztv.online/otzyv.php?kp=267', function (data) {
+						var modal = $('<div><div class="broadcast__text" style="text-align:left"><div class="otzyv">' + data + '</div></div></div>');
+						var enabled = Lampa.Controller.enabled().name;
+						Lampa.Modal.open({
+							title: "11111111111",
+							html: modal,
+							size: "large",
+							mask: !0,
+							onBack: function () {
+								Lampa.Modal.close(), Lampa.Controller.toggle(enabled)
+							},
+							onSelect: function () { }
+						});
+					});
 				});
 			}
 

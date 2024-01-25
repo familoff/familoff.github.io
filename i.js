@@ -7,7 +7,7 @@
 				var modal = $('<div><div class="broadcast__text" style="text-align:left"><div class="otzyv">' + data + '</div></div></div>');
 				var enabled = Lampa.Controller.enabled().name;
 				Lampa.Modal.open({
-					title: "11111111111",
+					title: "",
 					html: modal,
 					size: "large",
 					mask: !0,

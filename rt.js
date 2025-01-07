@@ -3,43 +3,74 @@
 
     function rating_rotten_tomatoes(card) {
         var network = new Lampa.Reguest();
-        var imdbId = card.imdb_id;
         var params = {
-            url: 'https://www.omdbapi.com/',
-            apiKey: 'b7fc6bc6',
-            timeout: 15000
+            id: card.id,
+            api_url: 'https://www.omdbapi.com/',
+            api_key: 'b7fc6bc6',
+            cache_time: 60 * 60 * 24 * 1000 // 1 day
         };
-
         getRating();
 
         function getRating() {
-            if (!imdbId) return showError('IMDB ID not found');
+            var movieRating = _getCache(params.id);
+            if (movieRating) {
+                return _showRating(movieRating);
+            } else {
+                fetchRating();
+            }
+        }
 
-            var url = `${params.url}?apikey=${params.apiKey}&i=${encodeURIComponent(imdbId)}`;
+        function fetchRating() {
+            var url = params.api_url + '?apikey=' + params.api_key + '&i=' + encodeURIComponent(card.imdb_id);
             network.clear();
-            network.timeout(params.timeout);
+            network.timeout(15000);
             network.silent(url, function (data) {
                 if (data && data.Ratings) {
                     var rtRating = data.Ratings.find(r => r.Source === 'Rotten Tomatoes');
-                    var rating = rtRating ? rtRating.Value : 'N/A';
-                    _showRating(rating);
+                    var score = rtRating ? parseInt(rtRating.Value) : 0;
+                    var movieRating = _setCache(params.id, {
+                        rt: score,
+                        timestamp: new Date().getTime()
+                    });
+                    return _showRating(movieRating);
                 } else {
-                    _showRating('N/A');
+                    showError('No rating found');
                 }
             }, function (a, c) {
                 showError(network.errorDecode(a, c));
             }, false);
         }
 
-        function _showRating(rating) {
-            var render = Lampa.Activity.active().activity.render();
-            $('.wait_rating_rt', render).remove();
-            var rtHtml = `<div class="full-start__rate rate--rt"><div>${rating}</div><div>RT</div></div>`;
-            $('.info__rate', render).after(rtHtml);
+        function _getCache(movie) {
+            var timestamp = new Date().getTime();
+            var cache = Lampa.Storage.cache('rt_rating', 500, {});
+            if (cache[movie] && (timestamp - cache[movie].timestamp) <= params.cache_time) {
+                return cache[movie];
+            } else {
+                delete cache[movie];
+                Lampa.Storage.set('rt_rating', cache);
+                return false;
+            }
+        }
+
+        function _setCache(movie, data) {
+            var cache = Lampa.Storage.cache('rt_rating', 500, {});
+            cache[movie] = data;
+            Lampa.Storage.set('rt_rating', cache);
+            return data;
+        }
+
+        function _showRating(data) {
+            if (data) {
+                var rt_rating = !isNaN(data.rt) && data.rt !== null ? data.rt + '%' : '0%';
+                var render = Lampa.Activity.active().activity.render();
+                $('.wait_rating_rt', render).remove();
+                $('.rate--rt', render).removeClass('hide').find('> div').eq(0).text(rt_rating);
+            }
         }
 
         function showError(error) {
-            Lampa.Noty.show('Rotten Tomatoes: ' + error);
+            Lampa.Noty.show('Rating RT: ' + error);
         }
     }
 
@@ -48,7 +79,7 @@
         Lampa.Listener.follow('full', function (e) {
             if (e.type == 'complite') {
                 var render = e.object.activity.render();
-                if ($('.rate--rt', render).length === 0 && !$('.wait_rating_rt', render).length) {
+                if ($('.rate--rt', render).hasClass('hide') && !$('.wait_rating_rt', render).length) {
                     $('.info__rate', render).after('<div style="width:2em;margin-top:1em;margin-right:1em" class="wait_rating_rt"><div class="broadcast__scan"><div></div></div><div>');
                     rating_rotten_tomatoes(e.data.movie);
                 }

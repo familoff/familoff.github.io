@@ -14,38 +14,39 @@
         function getRating() {
             var movieRating = _getCache(params.id);
             if (movieRating) {
+                console.log('-----Рейтинг есть');
                 return _showRating(movieRating);
             } else {
+                console.log('-----Рейтинга нет');
                 fetchRating();
             }
         }
 
         function fetchRating() {
-            var url = params.api_url + '?apikey=' + params.api_key + '&i=' + encodeURIComponent(card.imdb_id);
+            var url = `${params.api_url}?apikey=${params.api_key}&i=${encodeURIComponent(card.imdb_id)}`;
             network.clear();
             network.timeout(15000);
             network.silent(url, function (data) {
                 if (data && data.Ratings) {
                     var rtRating = data.Ratings.find(r => r.Source === 'Rotten Tomatoes');
-                    var score = rtRating ? parseInt(rtRating.Value) : 0;
+                    var score = rtRating ? rtRating.Value : 'N/A';
                     var movieRating = {
                         rt: score,
-                        timestamp: new Date().getTime()
+                        timestamp: Date.now()
                     };
                     _setCache(params.id, movieRating);
-                    return _showRating(movieRating);
+                    _showRating(movieRating);
                 } else {
                     showError('No rating found');
                 }
             }, function (a, c) {
                 showError(network.errorDecode(a, c));
-            }, false);
+            });
         }
 
         function _getCache(movie) {
             var cache = JSON.parse(localStorage.getItem('rt_rating_cache') || '{}');
-            var timestamp = new Date().getTime();
-            if (cache[movie] && (timestamp - cache[movie].timestamp) <= params.cache_time) {
+            if (cache[movie] && Date.now() - cache[movie].timestamp <= params.cache_time) {
                 return cache[movie];
             } else {
                 delete cache[movie];
@@ -61,12 +62,10 @@
         }
 
         function _showRating(data) {
-            if (data) {
-                var rt_rating = !isNaN(data.rt) && data.rt !== null ? data.rt + '%' : '0%';
-                var render = Lampa.Activity.active().activity.render();
-                $('.wait_rating_rt', render).remove();
-                $('.rate--rt', render).removeClass('hide').find('> div').eq(0).text(rt_rating);
-            }
+            var rt_rating = data.rt !== 'N/A' ? data.rt : '0%';
+            var render = Lampa.Activity.active().activity.render();
+            $('.wait_rating_rt', render).remove();
+            $('.rate--rt', render).removeClass('hide').find('> div').eq(0).text(rt_rating);
         }
 
         function showError(error) {
@@ -77,7 +76,7 @@
     function startPlugin() {
         window.rotten_tomatoes_plugin = true;
         Lampa.Listener.follow('full', function (e) {
-            if (e.type == 'complite') {
+            if (e.type === 'complite') {
                 var render = e.object.activity.render();
                 if ($('.rate--rt', render).hasClass('hide') && !$('.wait_rating_rt', render).length) {
                     $('.info__rate', render).after('<div style="width:2em;margin-top:1em;margin-right:1em" class="wait_rating_rt"><div class="broadcast__scan"><div></div></div><div>');
